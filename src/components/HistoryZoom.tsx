@@ -8,7 +8,8 @@ import eniac from "@/img/two-women-operating-eniac-full-resolution.jpg";
 // The ENIAC photo opens from a small framed card to the whole screen.
 export default function HistoryZoom() {
   const [p, setP] = useState(0);
-  const ref = useStickyProgress<HTMLElement>(setP);
+  // Quantised so React re-renders on visible changes only, not every scroll tick.
+  const ref = useStickyProgress<HTMLElement>((v) => setP(Math.round(v * 200) / 200));
   const open = Math.min(p / 0.6, 1);
   const inset = (1 - open) * 22;
   const radius = (1 - open) * 18;

@@ -5,7 +5,8 @@ import Header from "@/components/Header";
 import CodeRunner from "@/components/CodeRunner";
 import LessonList from "@/components/LessonList";
 import Quiz from "@/components/Quiz";
-import DoneToggle from "@/components/DoneToggle";
+import LessonGate from "@/components/LessonGate";
+import NextLesson from "@/components/NextLesson";
 import Text from "@/components/Text";
 import { getLesson, lessons } from "@/lib/lessons";
 
@@ -45,6 +46,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
             JavaScript lesson {index + 1} of {lessons.length} · {lesson.minutes} min
           </p>
 
+          <LessonGate slug={lesson.slug}>
           {lesson.sections.map((s) => (
             <section key={s.heading} data-reveal className="mt-20 max-w-[72ch]">
               <h2 className="mb-5 text-[clamp(28px,2.6vw,40px)] font-medium leading-[1.1] tracking-[-0.03em]">{s.heading}</h2>
@@ -77,10 +79,8 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
           <section className="mt-20 max-w-[72ch]">
             <h2 className="mb-8 text-[clamp(28px,2.6vw,40px)] font-medium leading-[1.1] tracking-[-0.03em]">Check yourself</h2>
             <Quiz slug={lesson.slug} questions={lesson.quiz} />
-            <div className="mt-8">
-              <DoneToggle slug={lesson.slug} />
-            </div>
           </section>
+          </LessonGate>
 
           <nav className="mt-20 grid max-w-[72ch] gap-4 sm:grid-cols-2" aria-label="Lesson navigation">
             {prev ? (
@@ -91,17 +91,7 @@ export default async function LessonPage({ params }: { params: Promise<{ slug: s
             ) : (
               <span />
             )}
-            {next ? (
-              <Link href={`/lessons/${next.slug}`} className="press block rounded-[var(--radius)] bg-accent p-5 text-right text-accent-ink shadow-[0_20px_60px_-20px_var(--glow)]">
-                <span className="block text-small">Next</span>
-                <span className="text-lead font-medium">{next.title}</span>
-              </Link>
-            ) : (
-              <Link href="/lessons" className="press block rounded-[var(--radius)] bg-accent p-5 text-right text-accent-ink shadow-[0_20px_60px_-20px_var(--glow)]">
-                <span className="block text-small">You finished the course</span>
-                <span className="text-lead font-medium">See all lessons</span>
-              </Link>
-            )}
+            <NextLesson slug={lesson.slug} next={next} />
           </nav>
         </main>
       </div>

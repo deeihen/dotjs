@@ -26,7 +26,8 @@ const steps = [
 
 export default function CodeStory() {
   const [p, setP] = useState(0);
-  const ref = useStickyProgress<HTMLElement>(setP);
+  // Quantised so React re-renders on visible changes only, not every scroll tick.
+  const ref = useStickyProgress<HTMLElement>((v) => setP(Math.round(v * 200) / 200));
 
   const typed = Math.round(Math.min(p / 0.42, 1) * total);
   const ran = p > 0.5;
@@ -99,7 +100,7 @@ export default function CodeStory() {
             </div>
 
             <div
-              className="glass absolute -bottom-10 left-4 w-[min(360px,85%)] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] sm:-right-4 sm:left-auto"
+              className="glass absolute -bottom-10 left-4 bg-surface w-[min(360px,85%)] p-5 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.7)] sm:-right-4 sm:left-auto"
               style={{ opacity: quiz, transform: `translate3d(0, ${(1 - quiz) * 60}px, ${(1 - quiz) * -200}px) rotateX(${(1 - quiz) * 30}deg)` }}
               aria-hidden={quiz === 0}
             >

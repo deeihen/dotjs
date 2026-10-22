@@ -1,6 +1,7 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { lessons } from "./lessons";
 
 // Progress lives only in this browser's localStorage.
 export type Progress = { done: string[]; quiz: Record<string, number> };
@@ -46,6 +47,20 @@ function subscribe(l: () => void) {
 
 export function useProgress() {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
+}
+
+// False during server render and hydration, when progress still reads as empty.
+export function useMounted() {
+  const [m, setM] = useState(false);
+  useEffect(() => setM(true), []);
+  return m;
+}
+
+// A lesson opens once the one before it is done (passed its quiz).
+// shortcut: enforced in the browser only, since progress lives in localStorage; needs accounts to be tamper-proof.
+export function isUnlocked(slug: string, done: string[]) {
+  const i = lessons.findIndex((l) => l.slug === slug);
+  return i <= 0 || done.includes(lessons[i - 1].slug);
 }
 
 export function setDone(slug: string, done: boolean) {

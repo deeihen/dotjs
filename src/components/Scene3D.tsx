@@ -65,7 +65,8 @@ export default function Scene3D() {
     } catch {
       return; // No WebGL: the page reads fine without the scene.
     }
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+    // Full-screen WebGL at 2x+ DPR is the biggest GPU cost; 1.5 is visually close.
+    renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 768 ? 1.25 : 1.5));
     renderer.toneMapping = THREE.NeutralToneMapping;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -97,7 +98,7 @@ export default function Scene3D() {
           clearcoatRoughness: 0.12,
         }),
     );
-    const cube = new THREE.Mesh(new RoundedBoxGeometry(2, 2, 2, 8, 0.22), mats);
+    const cube = new THREE.Mesh(new RoundedBoxGeometry(2, 2, 2, 5, 0.22), mats);
 
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(2.25, 0.025, 16, 160),
@@ -117,8 +118,8 @@ export default function Scene3D() {
     const beads = new THREE.Group();
     for (let i = 0; i < 6; i++) {
       const b = new THREE.Mesh(
-        new THREE.SphereGeometry(0.09 + (i % 3) * 0.05, 32, 32),
-        new THREE.MeshPhysicalMaterial({ color: i % 2 ? 0xffffff : 0xf7df1e, roughness: 0.1, clearcoat: 1, metalness: 0.2 }),
+        new THREE.SphereGeometry(0.09 + (i % 3) * 0.05, 16, 16),
+        new THREE.MeshStandardMaterial({ color: i % 2 ? 0xffffff : 0xf7df1e, roughness: 0.1, metalness: 0.2 }),
       );
       const a = (i / 6) * Math.PI * 2;
       b.position.set(Math.cos(a) * 2.25, 0, Math.sin(a) * 2.25);
@@ -165,15 +166,27 @@ export default function Scene3D() {
     };
     addEventListener("pointermove", onMove);
 
+    // Anchor positions in page coordinates, measured only when the layout changes,
+    // so the frame loop never forces a layout read.
+    let anchors: { top: number; bottom: number; c: number; p: Pose }[] = [];
+    let maxScroll = 1;
+    const measure = () => {
+      anchors = [...document.querySelectorAll("[data-cube]")].map((el) => {
+        const r = el.getBoundingClientRect();
+        const top = r.top + scrollY;
+        return { top, bottom: top + r.height, c: top + r.height / 2, p: readPose(el, mobile) };
+      });
+      maxScroll = Math.max(document.documentElement.scrollHeight - h, 1);
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.body);
+    measure();
+
     const current: Pose = { x: 0.45, y: 0, s: 0 };
     const target = (): Pose => {
-      const anchors = [...document.querySelectorAll("[data-cube]")];
       if (!anchors.length) return { x: 0, y: 0, s: 0 };
       const mid = h / 2;
-      const pts = anchors.map((el) => {
-        const r = el.getBoundingClientRect();
-        return { c: r.top + r.height / 2, p: readPose(el, mobile), top: r.top, bottom: r.bottom };
-      });
+      const pts = anchors.map((a) => ({ ...a, c: a.c - scrollY, top: a.top - scrollY, bottom: a.bottom - scrollY }));
       // Inside a section the cube holds its pose; between centres it travels.
       const inside = pts.find((p) => p.top <= mid && p.bottom >= mid && p.bottom - p.top > h * 1.5);
       if (inside) return inside.p;
@@ -208,7 +221,7 @@ export default function Scene3D() {
       hero.scale.setScalar(Math.max(current.s * base, 0.0001));
       hero.visible = current.s > 0.01;
 
-      const scroll = scrollY / Math.max(document.documentElement.scrollHeight - h, 1);
+      const scroll = scrollY / maxScroll;
       if (!reduce) {
         cube.rotation.y = t * 0.35 + scroll * Math.PI * 6 + mouse.x * 0.35;
         cube.rotation.x = Math.sin(t * 0.6) * 0.15 + scroll * Math.PI * 2 + mouse.y * 0.25;
@@ -231,6 +244,7 @@ export default function Scene3D() {
 
     return () => {
       cancelAnimationFrame(raf);
+      ro.disconnect();
       removeEventListener("resize", resize);
       removeEventListener("pointermove", onMove);
       scene.traverse((o) => {

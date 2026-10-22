@@ -17,7 +17,7 @@ export default function LessonsPage() {
             All {lessons.length} lessons
           </h1>
           <p data-reveal style={{ "--d": 1 } as React.CSSProperties} className="mt-6 max-w-[40ch]">
-            Take them in order: each one builds on the last. A yellow dot means you passed its quiz or marked it done.
+            Take them in order: each one builds on the last. A yellow dot means you passed its quiz; the next lesson unlocks when you do.
           </p>
           <div data-reveal style={{ "--d": 2 } as React.CSSProperties} className="mt-10">
             <ProgressSummary />
